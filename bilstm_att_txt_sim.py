@@ -76,8 +76,17 @@ TEXT.build_vocab(train,max_size=50000)   #构建词表
 LABEL.build_vocab(train) # 
 TEXT.vocab.set_vectors(vectors.stoi,vectors.vectors,vectors.dim)  #替换向量为word2vec
 embedding =nn.Embedding.from_pretrained(torch.FloatTensor(TEXT.vocab.vectors))  #准备训练用向量
-#index=vectors.stoi["中国"]
-#china_vec=vectors.vectors[index]
+index=vectors.stoi["中国"]
+china_vec=vectors.vectors[index]
+
+
+def create_embed(vectors,sentence):
+    return [ vectors.vectors[vectors.stoi[w]] for w in sentence]
+
+china_vec2=create_embed(vectors,["中国","人类"])
+
+print(china_vec)
+print(china_vec2)
 
 
 
