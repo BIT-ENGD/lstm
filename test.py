@@ -26,3 +26,7 @@ x=[[2,3,5],[1,2,3]]
 s=TT(torch.LongTensor(x))
 print(s)
 
+
+
+str="Welcome to China."
+print(str.find("to"))
