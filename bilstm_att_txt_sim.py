@@ -81,9 +81,9 @@ china_vec=vectors.vectors[index]
 
 
 def create_embed(vectors,sentence):
-    return [ vectors.vectors[vectors.stoi[w]] for w in sentence]
+    return torch.IntTensor([vectors.stoi[w] for w in sentence])
 
-china_vec2=create_embed(vectors,["中国","人类"])
+china_vec2=embedding(create_embed(vectors,["中国","人类"]))
 
 print(china_vec)
 print(china_vec2)
