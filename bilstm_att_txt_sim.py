@@ -11,6 +11,8 @@ import jieba
 
 # https://blog.csdn.net/huanxingchen1/article/details/107185861    torchtext 使用方法
 
+# https://dzlab.github.io/dltips/en/pytorch/torchtext-datasets/  torchtext 数据集使用方法
+
 '''
 def forward(self,x):
     print(x.shape)
@@ -81,8 +83,17 @@ embed_dim=weights.size(1)
 vocnum=weights.size(0)
 print(embed_dim,vocnum)
 
-fields=[("first",TEXT),("second",TEXT),("similarity",LABEL)]
-train, test = TabularDataset.splits(path=DATA_DIR,format="tsv",train=TRAIN_DATA,test=TEST_DATA,skip_header=False, fields=fields)
+#fields=[("first",TEXT),("second",TEXT),("similarity",LABEL)]
+#train, test = TabularDataset.splits(path=DATA_DIR,format="tsv",train=TRAIN_DATA,test=TEST_DATA,skip_header=False, fields=fields)
+
+
+fields = {
+  'label': ('label', LABEL),
+  #'label_des': ('label_des', None),
+  'sentence': ('sentence', TEXT) 
+}
+
+train, test = TabularDataset.splits(path=DATA_DIR,format="json",train=TRAIN_DATA,test=TEST_DATA,skip_header=False, fields=fields)
 TEXT.build_vocab(train,max_size=50000)   #构建词表
 LABEL.build_vocab(train) # 
 TEXT.vocab.set_vectors(vectors.stoi,vectors.vectors,vectors.dim)  #替换向量为word2vec
