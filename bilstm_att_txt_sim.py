@@ -30,14 +30,22 @@ W2V_BIN_FILE="w2v\\baike_26g_news_13g_novel_229g.bin"
 CACHE_DIR="w2v\\cache"
 
 
-
+''' 
 DATA_DIR=DATASETDIR+"LCQMC\\data\\"
 TRAIN_DATA="train.tsv"
 DEV_DATA="dev.tsv"
 TEST_DATA="test.tsv"
+'''
+
+DATA_DIR=DATASETDIR+"iflytek_public\\"
+TRAIN_DATA="train.json"
+DEV_DATA="dev.json"
+TEST_DATA="test.json"
 
 STOPFILE=DATASETDIR+"stopwords.txt"
 
+
+SENTENCE_LEN=50
 # prepare stoplist
 
 
@@ -59,7 +67,10 @@ def is_stop_word(word):
 #model.save_word2vec_format(DATASETDIR+W2V_TXT_FILE)
 
 def tokenizer(text):    # 可以自己定义分词器，比如jieba分词。也可以在里面添加数据清洗工作     "分词操作，可以用jieba"
-    return [wd for wd in jieba.cut(text, cut_all=False) if not is_stop_word(wd)]
+     return [wd for wd in jieba.cut(text, cut_all=False) if not is_stop_word(wd)]
+ 
+         
+
 
 TEXT=Field(sequential=True, tokenize=tokenizer,lower=True,fix_length=200)
 LABEL=Field(sequential=False, use_vocab=False)
@@ -79,14 +90,17 @@ embedding =nn.Embedding.from_pretrained(torch.FloatTensor(TEXT.vocab.vectors))  
 index=vectors.stoi["中国"]
 china_vec=vectors.vectors[index]
 
+# for a padding word, its index is 1.
+def create_embed(TEXT,sentence):
+    ori_list=[TEXT.vocab.stoi[w] for w in sentence]
+    if len(ori_list) > SENTENCE_LEN :
+        return torch.IntTensor(ori_list[:SENTENCE_LEN])
+    else:
+        return torch.IntTensor(ori_list + (SENTENCE_LEN-len(ori_list))*[1])
 
-def create_embed(vectors,sentence):
-    return torch.IntTensor([vectors.stoi[w] for w in sentence])
-
-china_vec2=embedding(create_embed(vectors,["中国","人类"]))
-
-print(china_vec)
-print(china_vec2)
+#china_vec2=embedding(create_embed(TEXT,["中国","人类"]))
+#print(china_vec)
+#print(china_vec2)
 
 
 
@@ -96,6 +110,8 @@ class BiLSTM_Attn(nn.Module):
         self.embedding =embedding
         self.X=input
 
+    def forward(self,X):
+        X=self.embedding(X)
 
-#print(TEXT.vocab)
-print(LABEL.vocab)
+
+
