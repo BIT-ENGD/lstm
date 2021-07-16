@@ -24,7 +24,7 @@ def forward(self,x):
 
 '''
 
-DATASETDIR="H:\\dataset\\"
+DATASETDIR="d:\\dataset\\"
 W2V_TXT_FILE="w2v\\baike_26g_news_13g_novel_229g.txt"
 W2V_BIN_FILE="w2v\\baike_26g_news_13g_novel_229g.bin"
 CACHE_DIR="w2v\\cache"
