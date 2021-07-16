@@ -30,3 +30,9 @@ print(s)
 
 str="Welcome to China."
 print(str.find("to"))
+
+
+l=[1]
+
+l+=5*[2]
+print(l)
