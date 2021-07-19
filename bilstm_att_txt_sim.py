@@ -3,11 +3,12 @@ import torch
 import torch.nn as nn 
 from  torch.utils.data import Dataset,DataLoader
 import torchtext.vocab as vocab
-from torchtext.legacy.data import Field,TabularDataset, Example,BucketIterator
+from torchtext.legacy.data import Field,TabularDataset, Example,BucketIterator,Iterator
 import torch.functional as F
 import jieba 
 import gensim
 import math
+import torchsummary as ts
 
 # https://blog.csdn.net/huanxingchen1/article/details/107185861    torchtext 使用方法
 
@@ -55,11 +56,10 @@ def forward(self,x):
 
 '''
 
-embedding_dim =128
-n_hidden=5
+n_hidden= 240 # 隐层特征维度  240
 num_classes=120
-batch_size=100
-EPOCH=500
+batch_size=200
+EPOCH_NUM=500
 
 DATASETDIR="H:\\dataset\\"
 W2V_TXT_FILE="w2v\\baike_26g_news_13g_novel_229g.txt"
@@ -145,11 +145,13 @@ china_vec=vectors.vectors[index]
 # for a padding word, its index is 1.
 def create_embed(TEXT,sentence):
     ori_list=[TEXT.vocab.stoi[w] for w in sentence]
+    return torch.IntTensor(ori_list)
+    '''
     if len(ori_list) > SENTENCE_LEN :
         return torch.IntTensor(ori_list[:SENTENCE_LEN])
     else:
         return torch.IntTensor(ori_list + (SENTENCE_LEN-len(ori_list))*[1])
-
+    '''
 china_vec2=embedding(create_embed(TEXT,["中国","人类"]))
 print(china_vec)
 print(china_vec2)
@@ -217,11 +219,20 @@ class BiLSTM_AttentionEx(nn.Module):
 # training
 
 # https://zhuanlan.zhihu.com/p/353795265
-train_iter = BucketIterator.splits( (train),sort_key=lambda x: len(x.text), batch_size=(batch_size),device=device,sort_within_batch=False)
+#https://blog.csdn.net/liu_chengwei/article/details/115299789  dataset.iterator等的 使用
+train_iter = BucketIterator( (train),sort_key=lambda x: len(x.text), batch_size=(batch_size),device=device,sort_within_batch=False)  #BucketIterator.splits
 test_iter=Iterator(test, batch_size=64, device=device, sort=False, sort_within_batch=False, shuffle=False)
 vocab_size=len(TEXT.vocab)
 label_num = len(LABEL.vocab)
 
-print(vocab_size, label_num)
+
+model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,1)
+
+
+#print(vocab_size, label_num)
+
+# https://www.cnblogs.com/tangzz/p/14598268.html
+for epoch in range(EPOCH_NUM):
+    loss_epoch=0.0
 
 
