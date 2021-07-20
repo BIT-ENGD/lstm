@@ -185,7 +185,7 @@ class BiLSTM_Attention(nn.Module):
 class BiLSTM_AttentionEx(nn.Module):
     def __init__(self, embedding,embedding_dim, hidden_dim, n_layers):
 
-        super(BiLSTM_Attention, self).__init__()
+        super(BiLSTM_AttentionEx, self).__init__()
 
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
