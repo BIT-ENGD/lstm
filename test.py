@@ -36,13 +36,3 @@ l=[1]
 
 l+=5*[2]
 print(l)
-
-from torch.nn.utils.rnn import pack_sequence
-
-a=torch.tensor([1,2,3])
-b=torch.tensor([4,5])
-c=torch.tensor([6])
-
-d=pack_sequence([a,b,c])
-print(d)
-

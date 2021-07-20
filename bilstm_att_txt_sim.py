@@ -1,47 +1,17 @@
-from typing import Iterator
 import torch 
 import torch.nn as nn 
 from  torch.utils.data import Dataset,DataLoader
-import torchtext.vocab as vocab
-from torchtext.legacy.data import Field,TabularDataset, Example,BucketIterator,Iterator
-import torch.functional as F
-import jieba 
 import gensim
-import math
-import torchsummary as ts
+import torchtext.vocab as vocab
+
+from torchtext.legacy.data import Field,TabularDataset, Example,BucketIterator
+
+import jieba 
+
 
 # https://blog.csdn.net/huanxingchen1/article/details/107185861    torchtext 使用方法
 
 # https://dzlab.github.io/dltips/en/pytorch/torchtext-datasets/  torchtext 数据集使用方法
-
-
-# lstm 详解 https://zhuanlan.zhihu.com/p/79064602
-
-
-
-# 参考代码： https://codechina.csdn.net/mirrors/WHLYA/text-classification/-/blob/master/text%20classification/LSTM+Attention.ipynb
-'''
-lstm的 Hiddien_size 其实就是W 权重的维数
-
-input_size 即输入参数的维数，比如embedding_dim （嵌入变量的维数）
-batch_first: 第一维是否是 batch_size
-输出维度为hidden_size, 双向bilstm为hidden_size*2
-
-
-默认输入数据为 input,(h_0,c_0)
-input: 输入数据，即上面例子中的一个句子（或者一个batch的句子），其维度形状为 (seq_len, batch, input_size), input_size为输入变量的维度，比如embedding_dim
-h_0：维度形状为 (num_layers * num_directions, batch, hidden_size):
-c_0： 维度形状为 (num_layers * num_directions, batch, hidden_size),各参数含义和h_0类似。
-当然，如果你没有传入(h_0, c_0)，那么这两个参数会默认设置为0。
-
-
-输出数据 output,(Hn,Cn)
-output: [seq_len,bacth,num_direction*hidden_size]
-
-Hn (num_layers*num_direction,batch,hidden_size)
-Cn (num_layers* num_directions, batch, hidden_size)
-
-'''
 
 '''
 def forward(self,x):
@@ -56,12 +26,7 @@ def forward(self,x):
 
 '''
 
-n_hidden= 240 # 隐层特征维度  240
-num_classes=120
-batch_size=200
-EPOCH_NUM=500
-
-DATASETDIR="H:\\dataset\\"
+DATASETDIR="d:\\dataset\\"
 W2V_TXT_FILE="w2v\\baike_26g_news_13g_novel_229g.txt"
 W2V_BIN_FILE="w2v\\baike_26g_news_13g_novel_229g.bin"
 CACHE_DIR="w2v\\cache"
@@ -85,7 +50,6 @@ STOPFILE=DATASETDIR+"stopwords.txt"
 SENTENCE_LEN=50
 # prepare stoplist
 
-device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 STOPLIST=['在','上','的','地','得','就是','是','了','和','就','还','一直','中','让','提前','如','！','？','：','；','－','只能','以','只','，','。','！','、','——','《','》','（','）','到','从','之','【', '】','/','(',')','-','◆','才','最','已','□','却','更']
@@ -111,7 +75,7 @@ def tokenizer(text):    # 可以自己定义分词器，比如jieba分词。也�
 
 
 TEXT=Field(sequential=True, tokenize=tokenizer,lower=True,fix_length=200)
-LABEL=Field(sequential=False, use_vocab=False,preprocessing=int)
+LABEL=Field(sequential=False, use_vocab=False)
 
 vectors=vocab.Vectors(name=DATASETDIR+W2V_TXT_FILE,cache=DATASETDIR+CACHE_DIR)
 weights=torch.FloatTensor(vectors.vectors)
@@ -123,18 +87,13 @@ print(embed_dim,vocnum)
 #train, test = TabularDataset.splits(path=DATA_DIR,format="tsv",train=TRAIN_DATA,test=TEST_DATA,skip_header=False, fields=fields)
 
 
-fields_train = {
+fields = {
   'label': ('label', LABEL),
-  #'label_des': ('label_des', TEXT),
+  #'label_des': ('label_des', None),
   'sentence': ('sentence', TEXT) 
 }
 
-fields_test = {
-   'sentence': ('sentence', TEXT) 
-}
-
-train= TabularDataset.splits(path=DATA_DIR,format="json",train=TRAIN_DATA,skip_header=False, fields=fields_train)[0]
-test= TabularDataset.splits(path=DATA_DIR,format="json",test=TEST_DATA,skip_header=False, fields=fields_test)[0]
+train, test = TabularDataset.splits(path=DATA_DIR,format="json",train=TRAIN_DATA,test=TEST_DATA,skip_header=False, fields=fields)
 TEXT.build_vocab(train,max_size=50000)   #构建词表
 LABEL.build_vocab(train) # 
 TEXT.vocab.set_vectors(vectors.stoi,vectors.vectors,vectors.dim)  #替换向量为word2vec
@@ -145,12 +104,11 @@ china_vec=vectors.vectors[index]
 # for a padding word, its index is 1.
 def create_embed(TEXT,sentence):
     ori_list=[TEXT.vocab.stoi[w] for w in sentence]
-    return torch.IntTensor(ori_list)
-    '''
     if len(ori_list) > SENTENCE_LEN :
         return torch.IntTensor(ori_list[:SENTENCE_LEN])
     else:
         return torch.IntTensor(ori_list + (SENTENCE_LEN-len(ori_list))*[1])
+
     '''
 china_vec2=embedding(create_embed(TEXT,["中国","人类"]))
 print(china_vec)
@@ -234,5 +192,6 @@ model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,1)
 # https://www.cnblogs.com/tangzz/p/14598268.html
 for epoch in range(EPOCH_NUM):
     loss_epoch=0.0
+
 
 
