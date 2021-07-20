@@ -4,10 +4,10 @@ from  torch.utils.data import Dataset,DataLoader
 import gensim
 import torchtext.vocab as vocab
 
-from torchtext.legacy.data import Field,TabularDataset, Example,BucketIterator
-
+from torchtext.legacy.data import Field,TabularDataset, Example,BucketIterator,Iterator
+import torchsummary
 import jieba 
-
+import math 
 
 # https://blog.csdn.net/huanxingchen1/article/details/107185861    torchtext 使用方法
 
@@ -32,6 +32,12 @@ W2V_BIN_FILE="w2v\\baike_26g_news_13g_novel_229g.bin"
 CACHE_DIR="w2v\\cache"
 
 
+num_classes =120
+EPOCH_NUM=100
+n_hidden=240
+
+batch_size=128
+
 ''' 
 DATA_DIR=DATASETDIR+"LCQMC\\data\\"
 TRAIN_DATA="train.tsv"
@@ -50,6 +56,8 @@ STOPFILE=DATASETDIR+"stopwords.txt"
 SENTENCE_LEN=50
 # prepare stoplist
 
+
+device=torch.device("cuda"  if torch.cuda.is_available() else "cpu")
 
 
 STOPLIST=['在','上','的','地','得','就是','是','了','和','就','还','一直','中','让','提前','如','！','？','：','；','－','只能','以','只','，','。','！','、','——','《','》','（','）','到','从','之','【', '】','/','(',')','-','◆','才','最','已','□','却','更']
@@ -109,11 +117,11 @@ def create_embed(TEXT,sentence):
     else:
         return torch.IntTensor(ori_list + (SENTENCE_LEN-len(ori_list))*[1])
 
-    '''
+
 china_vec2=embedding(create_embed(TEXT,["中国","人类"]))
 print(china_vec)
 print(china_vec2)
-
+'''
 class BiLSTM_Attention(nn.Module):
    def __init__(self,embed):
        super(BiLSTM_Attention,self).__init__()
@@ -139,7 +147,7 @@ class BiLSTM_Attention(nn.Module):
       attn_output, attention= self.attention_net(output,final_hidden_state)
       return self.out(attn_output),attention  # FC 全连接网络 降维用
 
-
+'''
 class BiLSTM_AttentionEx(nn.Module):
     def __init__(self, embedding,embedding_dim, hidden_dim, n_layers):
 
