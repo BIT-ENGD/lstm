@@ -95,13 +95,20 @@ print(embed_dim,vocnum)
 #train, test = TabularDataset.splits(path=DATA_DIR,format="tsv",train=TRAIN_DATA,test=TEST_DATA,skip_header=False, fields=fields)
 
 
-fields = {
+fields_train = {
   'label': ('label', LABEL),
   #'label_des': ('label_des', None),
   'sentence': ('sentence', TEXT) 
 }
 
-train, test = TabularDataset.splits(path=DATA_DIR,format="json",train=TRAIN_DATA,test=TEST_DATA,skip_header=False, fields=fields)
+
+fields_test = {
+  #'label_des': ('label_des', None),
+  'sentence': ('sentence', TEXT) 
+}
+
+train = TabularDataset.splits(path=DATA_DIR,format="json",train=TRAIN_DATA,skip_header=False, fields=fields_train)[0]
+test = TabularDataset.splits(path=DATA_DIR,format="json",test=TEST_DATA,skip_header=False, fields=fields_test)[0]
 TEXT.build_vocab(train,max_size=50000)   #构建词表
 LABEL.build_vocab(train) # 
 TEXT.vocab.set_vectors(vectors.stoi,vectors.vectors,vectors.dim)  #替换向量为word2vec
