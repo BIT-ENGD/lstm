@@ -1,10 +1,11 @@
 import torch 
 import torch.nn as nn 
-from  torch.utils.data import Dataset,DataLoader
-import gensim
+import torch.optim as optim
+import torch.nn.functional as F
 import torchtext.vocab as vocab
-
 from torchtext.legacy.data import Field,TabularDataset, Example,BucketIterator,Iterator
+from torch.utils.tensorboard import SummaryWriter
+import gensim
 import torchsummary
 import jieba 
 import math 
@@ -26,7 +27,7 @@ def forward(self,x):
 
 '''
 
-DATASETDIR="d:\\dataset\\"
+DATASETDIR="h:\\dataset\\"
 W2V_TXT_FILE="w2v\\baike_26g_news_13g_novel_229g.txt"
 W2V_BIN_FILE="w2v\\baike_26g_news_13g_novel_229g.bin"
 CACHE_DIR="w2v\\cache"
@@ -194,19 +195,40 @@ class BiLSTM_AttentionEx(nn.Module):
 # https://zhuanlan.zhihu.com/p/353795265
 #https://blog.csdn.net/liu_chengwei/article/details/115299789  dataset.iterator等的 使用
 train_iter = BucketIterator( (train),sort_key=lambda x: len(x.text), batch_size=(batch_size),device=device,sort_within_batch=False)  #BucketIterator.splits
-test_iter=Iterator(test, batch_size=64, device=device, sort=False, sort_within_batch=False, shuffle=False)
+test_iter=Iterator(test, batch_size=64, device=device, sort=False, sort_within_batch=False, train=False,shuffle=False)   # 对  测试集，train要为false
 vocab_size=len(TEXT.vocab)
 label_num = len(LABEL.vocab)
 
 
-model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,1)
+model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,1).to(device)
 
 
 #print(vocab_size, label_num)
 
 # https://www.cnblogs.com/tangzz/p/14598268.html
+
+LR=1e-3
+optimizer=optim.Adam(model.parameters(),lr=LR)
+criterion =F.cross_entropy
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
+
+# 定义tensorboard日志的输出目录
+writer = SummaryWriter("runs/cnn")
+
 for epoch in range(EPOCH_NUM):
     loss_epoch=0.0
+    correct_num=0.0
+    total_num=0.0
+    scheduler.step()
 
+    for i, batch in enumerate(train_iter):
+        model.train()
+
+        label,sentence=batch.label,batch.sentence
+        optimizer.zero_grad()
+        pred=model(sentence)
+        loss =criterion(pred,label)
+        loss.backward()
+        optimizer.step()
 
 
