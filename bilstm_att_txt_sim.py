@@ -9,6 +9,8 @@ import gensim
 import torchsummary
 import jieba 
 import math 
+import copy
+import torch.onnx
 
 # https://blog.csdn.net/huanxingchen1/article/details/107185861    torchtext 使用方法
 
@@ -27,7 +29,7 @@ def forward(self,x):
 
 '''
 
-DATASETDIR="h:\\dataset\\"
+DATASETDIR="f:\\dataset\\"
 W2V_TXT_FILE="w2v\\baike_26g_news_13g_novel_229g.txt"
 W2V_BIN_FILE="w2v\\baike_26g_news_13g_novel_229g.bin"
 CACHE_DIR="w2v\\cache"
@@ -37,7 +39,7 @@ num_classes =120
 EPOCH_NUM=100
 n_hidden=240
 
-batch_size=128
+batch_size=2200
 
 ''' 
 DATA_DIR=DATASETDIR+"LCQMC\\data\\"
@@ -166,7 +168,7 @@ class BiLSTM_AttentionEx(nn.Module):
         self.embedding = embedding
         self.rnn = nn.LSTM(embedding_dim, hidden_dim, num_layers=n_layers, bidirectional=True, dropout=0.5)
         self.fc = nn.Linear(hidden_dim * 2, num_classes)
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.5) # 需要调用train
     #x,query：[batch, seq_len, hidden_dim*2]
     def attention_net(self, x, query, mask=None):      #软性注意力机制（key=value=x）
 
@@ -200,7 +202,7 @@ vocab_size=len(TEXT.vocab)
 label_num = len(LABEL.vocab)
 
 
-model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,1).to(device)
+model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,2).to(device)
 
 
 #print(vocab_size, label_num)
@@ -210,25 +212,53 @@ model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,1).to(device)
 LR=1e-3
 optimizer=optim.Adam(model.parameters(),lr=LR)
 criterion =F.cross_entropy
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
+#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
 
 # 定义tensorboard日志的输出目录
-writer = SummaryWriter("runs/cnn")
-
+writer = SummaryWriter("runs/lstm")
+model.train() # 对于有dropout和BN层的，需要调用 
+    
+loss_epoch=0.0
+loss_min=1.0
+correct_num=0.0
+total_num=0.0
+best_model=model
+is_best=False
+sentence="'"
 for epoch in range(EPOCH_NUM):
-    loss_epoch=0.0
-    correct_num=0.0
-    total_num=0.0
-    scheduler.step()
+
+  #  scheduler.step()
 
     for i, batch in enumerate(train_iter):
-        model.train()
-
-        label,sentence=batch.label,batch.sentence
+       
         optimizer.zero_grad()
-        pred=model(sentence)
-        loss =criterion(pred,label)
-        loss.backward()
-        optimizer.step()
+        label,sentence=batch.label,batch.sentence
+        pred=model(sentence)  #推理
+        loss =criterion(pred,label) #计算loss 
+        loss.backward()  #反向传递
+        optimizer.step()  # 更新参数
+
+        if loss < loss_min:
+            loss_min=loss 
+            best_model= copy.deepcopy(model)
+            is_best=True
 
 
+print("done loss_min:",loss_min)
+
+#https://www.codenong.com/cs107117759/
+def ExportModel(model):
+    torch.onnx.export(model,               # model being run
+                 sentence,                         # model input (or a tuple for multiple inputs)
+                  "best_model.onnx",   # where to save the model (can be a file or file-like object)
+                  export_params=True,        # store the trained parameter weights inside the model file
+                  opset_version=10,          # the ONNX version to export the model to
+                  do_constant_folding=True,  # whether to execute constant folding for optimization
+                  input_names = ['embedding'],   # the model's input names
+                  output_names = ['dropout'], # the model's output names
+                  dynamic_axes={'embedding' : {0 : 'string_size'}, 'embedding' : {1 : 'batch_size'},     # variable lenght axes
+                                'dropout' : {1: 'batch_size'}})
+if is_best:
+    torch.save(best_model,"bilstm_att_txt.pth")
+    print("Get a best model.")
+    ExportModel(best_model)
