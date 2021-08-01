@@ -36,3 +36,7 @@ l=[1]
 
 l+=5*[2]
 print(l)
+
+inputdata=torch.randn(1,3)
+sentence=torch.rand(300,1,dtype=torch.int64)
+print(inputdata)

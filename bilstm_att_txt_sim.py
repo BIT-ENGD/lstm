@@ -36,7 +36,7 @@ CACHE_DIR="w2v\\cache"
 
 
 num_classes =120
-EPOCH_NUM=100
+EPOCH_NUM=200
 n_hidden=240
 
 batch_size=2200
@@ -55,6 +55,7 @@ TEST_DATA="test.json"
 
 STOPFILE=DATASETDIR+"stopwords.txt"
 
+MODEL_NAME="bilstm_att_txt.pth"
 
 SENTENCE_LEN=50
 # prepare stoplist
@@ -209,7 +210,7 @@ model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,2).to(device)
 
 # https://www.cnblogs.com/tangzz/p/14598268.html
 
-LR=1e-3
+LR=1e-2
 optimizer=optim.Adam(model.parameters(),lr=LR)
 criterion =F.cross_entropy
 #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
@@ -256,9 +257,10 @@ def ExportModel(model):
                   do_constant_folding=True,  # whether to execute constant folding for optimization
                   input_names = ['embedding'],   # the model's input names
                   output_names = ['dropout'], # the model's output names
-                  dynamic_axes={'embedding' : {0 : 'string_size'}, 'embedding' : {1 : 'batch_size'},     # variable lenght axes
-                                'dropout' : {1: 'batch_size'}})
+                  dynamic_axes={'embedding' : [0,1],     # variable lenght axes
+                                'dropout' : [0,1]})
 if is_best:
-    torch.save(best_model,"bilstm_att_txt.pth")
+    torch.save(best_model,MODEL_NAME)
+    newmodel=torch.load(MODEL_NAME)
     print("Get a best model.")
     ExportModel(best_model)
