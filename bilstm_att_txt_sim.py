@@ -36,7 +36,7 @@ CACHE_DIR="w2v\\cache"
 
 
 num_classes =120
-EPOCH_NUM=200
+EPOCH_NUM=2000
 n_hidden=240
 
 batch_size=2200
@@ -210,7 +210,7 @@ model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,2).to(device)
 
 # https://www.cnblogs.com/tangzz/p/14598268.html
 
-LR=1e-2
+LR=1e-3
 optimizer=optim.Adam(model.parameters(),lr=LR)
 criterion =F.cross_entropy
 #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
@@ -238,7 +238,7 @@ for epoch in range(EPOCH_NUM):
         loss =criterion(pred,label) #计算loss 
         loss.backward()  #反向传递
         optimizer.step()  # 更新参数
-
+        writer.add_scalar('loss', loss, epoch)
         if loss < loss_min:
             loss_min=loss 
             best_model= copy.deepcopy(model)
@@ -246,7 +246,7 @@ for epoch in range(EPOCH_NUM):
 
 
 print("done loss_min:",loss_min)
-
+writer.add_graph(model, sentence)
 #https://www.codenong.com/cs107117759/
 def ExportModel(model):
     torch.onnx.export(model,               # model being run
@@ -264,3 +264,7 @@ if is_best:
     newmodel=torch.load(MODEL_NAME)
     print("Get a best model.")
     ExportModel(best_model)
+
+
+for sentense in test_iter:
+    print(sentence)

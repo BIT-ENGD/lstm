@@ -56,9 +56,9 @@ def ExportModel(model,input):
                 do_constant_folding=True,  # whether to execute constant folding for optimization
                 input_names = ['embedding'],   # the model's input names
                 output_names = ['dropout'], # the model's output names
-                dynamic_axes={'embedding' : [0,1],     # variable lenght axes
-                                'dropout' : [0,1]})
-
+                dynamic_axes={'embedding' : {0:"string_len",1:"batch_size"}    # variable lenght axes
+                         }   
+        )
 newmodel=torch.load(MODEL_NAME)
 sentence=torch.randint(low=0,high=22000,size=(300,1),device=torch.device("cuda"))
 ExportModel(newmodel,sentence)
