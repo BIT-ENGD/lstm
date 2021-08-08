@@ -36,7 +36,7 @@ CACHE_DIR="w2v\\cache"
 
 
 num_classes =120
-EPOCH_NUM=2000
+EPOCH_NUM=100
 n_hidden=240
 
 batch_size=2200
@@ -213,7 +213,7 @@ model=BiLSTM_AttentionEx(embedding,embed_dim,n_hidden,2).to(device)
 LR=1e-3
 optimizer=optim.Adam(model.parameters(),lr=LR)
 criterion =F.cross_entropy
-#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
 
 # 定义tensorboard日志的输出目录
 writer = SummaryWriter("runs/lstm")
@@ -228,7 +228,7 @@ is_best=False
 sentence="'"
 for epoch in range(EPOCH_NUM):
 
-  #  scheduler.step()
+    scheduler.step()
 
     for i, batch in enumerate(train_iter):
        
@@ -257,8 +257,8 @@ def ExportModel(model):
                   do_constant_folding=True,  # whether to execute constant folding for optimization
                   input_names = ['embedding'],   # the model's input names
                   output_names = ['dropout'], # the model's output names
-                  dynamic_axes={'embedding' : [0,1],     # variable lenght axes
-                                'dropout' : [0,1]})
+                  dynamic_axes={'embedding' : {0:"string_size",1:"bath_size"}},     # variable lenght axes
+                                )
 if is_best:
     torch.save(best_model,MODEL_NAME)
     newmodel=torch.load(MODEL_NAME)
