@@ -36,7 +36,7 @@ CACHE_DIR="w2v\\cache"
 
 
 num_classes =119
-EPOCH_NUM=2000
+EPOCH_NUM=100
 n_hidden=240
 
 batch_size=2000
