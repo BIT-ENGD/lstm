@@ -35,11 +35,13 @@ W2V_BIN_FILE="w2v\\baike_26g_news_13g_novel_229g.bin"
 CACHE_DIR="w2v\\cache"
 
 
-num_classes =120
-EPOCH_NUM=100
+num_classes =119
+EPOCH_NUM=2000
 n_hidden=240
 
-batch_size=2200
+batch_size=2000
+
+TEST_BATCH_SIZE=64
 
 ''' 
 DATA_DIR=DATASETDIR+"LCQMC\\data\\"
@@ -112,7 +114,9 @@ fields_test = {
 }
 
 train = TabularDataset.splits(path=DATA_DIR,format="json",train=TRAIN_DATA,skip_header=False, fields=fields_train)[0]
+valid = TabularDataset.splits(path=DATA_DIR,format="json",validation=DEV_DATA,skip_header=False, fields=fields_train)[0]
 test = TabularDataset.splits(path=DATA_DIR,format="json",test=TEST_DATA,skip_header=False, fields=fields_test)[0]
+
 TEXT.build_vocab(train,max_size=50000)   #构建词表
 LABEL.build_vocab(train) # 
 TEXT.vocab.set_vectors(vectors.stoi,vectors.vectors,vectors.dim)  #替换向量为word2vec
@@ -198,7 +202,9 @@ class BiLSTM_AttentionEx(nn.Module):
 # https://zhuanlan.zhihu.com/p/353795265
 #https://blog.csdn.net/liu_chengwei/article/details/115299789  dataset.iterator等的 使用
 train_iter = BucketIterator( (train),sort_key=lambda x: len(x.text), batch_size=(batch_size),device=device,sort_within_batch=False)  #BucketIterator.splits
-test_iter=Iterator(test, batch_size=64, device=device, sort=False, sort_within_batch=False, train=False,shuffle=False)   # 对  测试集，train要为false
+valid_iter = BucketIterator( (valid),sort_key=lambda x: len(x.text), batch_size=(batch_size),device=device,sort_within_batch=False)  #BucketIterator.splits
+
+test_iter=Iterator(test, batch_size=TEST_BATCH_SIZE, device=device, sort=False, sort_within_batch=False, train=False,shuffle=False)   # 对  测试集，train要为false
 vocab_size=len(TEXT.vocab)
 label_num = len(LABEL.vocab)
 
@@ -217,7 +223,7 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.5)
 
 # 定义tensorboard日志的输出目录
 writer = SummaryWriter("runs/lstm")
-model.train() # 对于有dropout和BN层的，需要调用 
+# 对于有dropout和BN层的，需要调用 
     
 loss_epoch=0.0
 loss_min=1.0
@@ -231,7 +237,7 @@ for epoch in range(EPOCH_NUM):
     scheduler.step()
 
     for i, batch in enumerate(train_iter):
-       
+        model.train() 
         optimizer.zero_grad()
         label,sentence=batch.label,batch.sentence
         pred=model(sentence)  #推理
@@ -244,7 +250,35 @@ for epoch in range(EPOCH_NUM):
             best_model= copy.deepcopy(model)
             is_best=True
 
+    # validation
+    if epoch % 2 ==0:
+        loss_one_epoch=0.0
+        conf_mat= torch.zeros(num_classes,num_classes)
+        model.eval()
 
+        for i, batch in enumerate(valid_iter):
+            label, sentence =batch.label,batch.sentence
+            pred = model(sentence)
+            pred.detach()
+
+            # 计算 loass
+            loss=criterion(pred,label)
+            loss_one_epoch += loss.item()
+            #统计预测信息
+
+            total_num += label.size(0)
+
+            # 检查有多少个预测是对的
+            correct_num +=(torch.argmax(pred,dim=1) == label).sum().float().item()
+            loss_one_epoch += loss.item()
+
+            for j in range(len(label)):
+                cate_i=label[j].item()
+                pre_i = torch.argmax(pred,dim=1)[j].item()
+                conf_mat[cate_i,pre_i]+=1.0            
+        print('{} set Accuracy:{:.2%}'.format('Valid', conf_mat.trace() / conf_mat.sum()))
+        writer.add_scalars('Vali-Loss', {'valid_loss': loss_one_epoch / len(valid_iter)}, epoch)
+        writer.add_scalars('Accuracy', {'valid_acc': conf_mat.trace() / conf_mat.sum()}, epoch)
 print("done loss_min:",loss_min)
 writer.add_graph(model, sentence)
 #https://www.codenong.com/cs107117759/
@@ -266,5 +300,5 @@ if is_best:
     ExportModel(best_model)
 
 
-for sentense in test_iter:
-    print(sentence)
+#for sentense in test_iter:
+#    print(sentence)
