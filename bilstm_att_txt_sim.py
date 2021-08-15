@@ -171,6 +171,7 @@ class BiLSTM_AttentionEx(nn.Module):
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
         self.embedding = embedding
+        self.embedding.weight.requires_grad = False
         self.rnn = nn.LSTM(embedding_dim, hidden_dim, num_layers=n_layers, bidirectional=True, dropout=0.5)
         self.fc = nn.Linear(hidden_dim * 2, num_classes)
         self.dropout = nn.Dropout(0.5) # 需要调用train
@@ -269,8 +270,9 @@ for epoch in range(EPOCH_NUM):
             total_num += label.size(0)
 
             # 检查有多少个预测是对的
+     
             correct_num +=(torch.argmax(pred,dim=1) == label).sum().float().item()
-            loss_one_epoch += loss.item()
+           # loss_one_epoch += loss.item()
 
             for j in range(len(label)):
                 cate_i=label[j].item()
@@ -300,5 +302,8 @@ if is_best:
     ExportModel(best_model)
 
 
-#for sentense in test_iter:
-#    print(sentence)
+for sentense in test_iter:
+    testpred=model(sentence)
+    testpred=testpred.t()
+    result=torch.argmax(testpred,dim=1)
+    print(result)
