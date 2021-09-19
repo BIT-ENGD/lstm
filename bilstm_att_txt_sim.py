@@ -6,7 +6,7 @@ import torchtext.vocab as vocab
 from torchtext.legacy.data import Field,TabularDataset, Example,BucketIterator,Iterator
 from torch.utils.tensorboard import SummaryWriter
 import gensim
-import torchsummary
+import torchsummary as summary
 import jieba 
 import math 
 import copy

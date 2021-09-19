@@ -1,0 +1,6 @@
+runs/lstm/events.out.tfevents.1629068063.DESKTOP-11JAVHN.15280.0
+runs/lstm/Vali-Loss_valid_loss/events.out.tfevents.1629068069.DESKTOP-11JAVHN.15280.1
+runs/lstm/Accuracy_valid_acc/events.out.tfevents.1629068069.DESKTOP-11JAVHN.15280.2
+.vscode/launch.json
+best_model.onnx
+best_model_new.onnx
